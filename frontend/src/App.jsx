@@ -13,9 +13,8 @@ import { Toaster } from "react-hot-toast";
 
 function App() {
   const { loading, data, error } = useQuery(GET_AUTHENTICATED_USER);
-  console.log("Data", data);
-  console.log("Loading", loading);
-  console.log("Error", error);
+
+  if (loading) return null;
   return (
     <>
       {data?.authUser && <Header />}
@@ -40,7 +39,7 @@ function App() {
         />
         <Route
           path="/transaction/:id"
-          element={data?.authUser ? <Navigate to="/" /> : <TransactionPage />}
+          element={data?.authUser ? <TransactionPage /> : <Navigate to="/" />}
         />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
