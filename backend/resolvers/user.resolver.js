@@ -18,7 +18,7 @@ const userResolver = {
     },
     authUser: async (_parent, _input, context) => {
       try {
-        const user = await context.getuser();
+        const user = await context.getUser();
         return user;
       } catch (error) {
         console.log(`Error in authuser: ${error}`);
@@ -49,7 +49,7 @@ const userResolver = {
           name,
           password: hashedPassword,
           gender,
-          profilePic: gender === "male" ? boyProfilePic : girlProfilePic,
+          profilePicture: gender === "male" ? boyProfilePic : girlProfilePic,
         });
         await user.save();
         await context.login(user);
@@ -63,26 +63,37 @@ const userResolver = {
     login: async (_, { input }, context) => {
       try {
         const { username, password } = input;
-        const user = await context.authenticate("graphql-local", {
+        if (!username || !password) throw new Error("All fields are required");
+
+        const { user } = await context.authenticate("graphql-local", {
           username,
           password,
         });
 
+        const existingUser = await User.findOne({ username });
+        const validPassword = await bcrypt.compare(
+          password,
+          existingUser.password
+        );
+        if (!validPassword) {
+          throw new Error("Invalid Username or Password");
+        }
+
         await context.login(user);
         return user;
-      } catch (error) {
-        console.log(`Error in login: ${error}`);
-        throw new Error(error.message || "Internal Server Error");
+      } catch (err) {
+        console.error("Error in login:", err);
+        throw new Error(err.message || "Internal server error");
       }
     },
 
     logout: async (_parent, _input, context) => {
       try {
         await context.logout();
-        req.session.destroy((err) => {
+        context.req.session.destroy((err) => {
           if (err) throw new Error(err.message);
         });
-        res.clearCookie("connect.sid");
+        context.res.clearCookie("connect.sid");
         return { message: "Logged out successfully" };
       } catch (error) {
         console.log(`Error in logout: ${error}`);
