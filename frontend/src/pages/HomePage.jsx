@@ -6,58 +6,103 @@ import Cards from "../components/Cards";
 import TransactionForm from "../components/TransactionForm";
 
 import { MdLogout } from "react-icons/md";
-import { useMutation } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { LOGOUT } from "../graphql/mutations/user.mutation";
+import { GET_TRANSACTION_STATISTICS } from "../graphql/queries/transaction.query";
+import { useEffect, useState } from "react";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const HomePage = (props) => {
-  const chartData = {
-    labels: ["Saving", "Expense", "Investment"],
+  const [chartData, setChartData] = useState({
+    labels: [],
     datasets: [
       {
-        label: "%",
-        data: [13, 8, 3],
-        backgroundColor: [
-          "rgba(75, 192, 192)",
-          "rgba(255, 99, 132)",
-          "rgba(54, 162, 235)",
-        ],
-        borderColor: [
-          "rgba(75, 192, 192)",
-          "rgba(255, 99, 132)",
-          "rgba(54, 162, 235, 1)",
-        ],
+        label: "Rs ",
+        data: [],
+        backgroundColor: [],
+        borderColor: [],
         borderWidth: 1,
         borderRadius: 50,
         spacing: 10,
         cutout: 130,
       },
     ],
-  };
+  });
 
-  const [logout, { loading, error }] = useMutation(LOGOUT, {
+  const [logout, { loading, client }] = useMutation(LOGOUT, {
     refetchQueries: ["GetAuthenticatedUser"],
   });
+
+  const { data } = useQuery(GET_TRANSACTION_STATISTICS);
+  console.log("Category Stats: ", data);
 
   const handleLogout = async () => {
     try {
       await logout();
+      client.resetStore();
     } catch (error) {
       console.log(error);
       toast.error(error.message);
     }
   };
 
+  useEffect(() => {
+    if (data?.categoryStatistics) {
+      const categories = data.categoryStatistics.map((stat) => stat.category);
+      const totalAmounts = data.categoryStatistics.map(
+        (stat) => stat.totalAmount
+      );
+
+      const backgroundColors = [];
+      const borderColors = [];
+
+      categories.forEach((category) => {
+        if (category === "saving") {
+          backgroundColors.push("rgba(75, 192, 192)");
+          borderColors.push("rgba(75, 192, 192)");
+        } else if (category === "expense") {
+          backgroundColors.push("rgba(255, 99, 132)");
+          borderColors.push("rgba(255, 99, 132)");
+        } else if (category === "investment") {
+          backgroundColors.push("rgba(54, 162, 235)");
+          borderColors.push("rgba(54, 162, 235)");
+        }
+      });
+
+      setChartData({
+        labels: categories,
+        datasets: [
+          {
+            label: "Rs ",
+            data: totalAmounts,
+            backgroundColor: backgroundColors,
+            borderColor: borderColors,
+            borderWidth: 1,
+            borderRadius: 50,
+            spacing: 10,
+            cutout: 130,
+          },
+        ],
+      });
+    }
+  }, [data]);
+
   return (
     <>
       <div className="flex flex-col gap-6 items-center max-w-7xl mx-auto z-20 relative justify-center">
+        <p className="md:text-4xl text-2xl lg:text-4xl font-bold text-center relative z-50 mr-4 bg-gradient-to-r from-pink-600 via-indigo-500 to-pink-400 inline-block text-transparent bg-clip-text">
+          Welcome{" "}
+          <span className="text-blue-900 tracking-wider ml-5">
+            {props.user.name.split(" ")[0]}
+          </span>
+        </p>
         <div className="flex items-center">
           <p className="md:text-4xl text-2xl lg:text-4xl font-bold text-center relative z-50 mb-4 mr-4 bg-gradient-to-r from-pink-600 via-indigo-500 to-pink-400 inline-block text-transparent bg-clip-text">
             Spend wisely, track wisely
           </p>
           <img
-            src={props.pic}
+            src={props.user.profilePicture}
             className="w-11 h-11 rounded-full border cursor-pointer"
             alt="Avatar"
           />
@@ -79,7 +124,7 @@ const HomePage = (props) => {
 
           <TransactionForm />
         </div>
-        <Cards />
+        <Cards user={props.user} />
       </div>
     </>
   );

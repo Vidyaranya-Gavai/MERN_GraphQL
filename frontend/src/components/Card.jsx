@@ -16,12 +16,12 @@ const categoryColorMap = {
   investment: "from-blue-700 to-blue-400",
 };
 
-const Card = ({ transaction }) => {
+const Card = ({ transaction, user }) => {
   let { category, amount, date, paymentType, description } = transaction;
   const [deleteTransaction, { loading, error }] = useMutation(
     DELETE_TRANSACTION,
     {
-      refetchQueries: ["GetTransactions"],
+      refetchQueries: ["GetTransactions", "GetTransactionStatistics"],
     }
   );
 
@@ -81,7 +81,7 @@ const Card = ({ transaction }) => {
         <div className="flex justify-between items-center">
           <p className="text-xs text-black font-bold">{formattedDate}</p>
           <img
-            src={"https://tecdn.b-cdn.net/img/new/avatars/2.webp"}
+            src={user.profilePicture}
             className="h-8 w-8 border rounded-full"
             alt=""
           />

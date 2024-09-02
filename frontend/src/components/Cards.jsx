@@ -2,7 +2,7 @@ import { useQuery } from "@apollo/client";
 import Card from "./Card";
 import { GET_TRANSACTIONS } from "../graphql/queries/transaction.query";
 
-const Cards = () => {
+const Cards = (props) => {
   const { data, loading, error } = useQuery(GET_TRANSACTIONS);
 
   if (error) return <p>Error: {error.message}</p>;
@@ -18,7 +18,11 @@ const Cards = () => {
         <Card cardType={"expense"} /> */}
         {!loading &&
           data.transactions.map((transaction) => (
-            <Card key={transaction._id} transaction={transaction} />
+            <Card
+              key={transaction._id}
+              transaction={transaction}
+              user={props.user}
+            />
           ))}
         {!loading && data.transactions.length === 0 && (
           <p className="text-2xl font-bold text-center w-full">

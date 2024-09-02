@@ -23,7 +23,7 @@ function App() {
           path="/"
           element={
             data?.authUser ? (
-              <HomePage pic={data.authUser.profilePicture} />
+              <HomePage user={data.authUser} />
             ) : (
               <Navigate to="/login" />
             )
